@@ -3,3 +3,4 @@ dist/
 *.class
 *.rpm
 *.deb
+*.class
