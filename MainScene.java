@@ -107,10 +107,6 @@ public class MainScene {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        Label version = new Label("v1.0.0");
-        version.setFont(Font.font("Monospace", 11));
-        version.setTextFill(Color.web("#3a4a6a"));
-
         Button closeBtn = buildIconButton("✕", "#c0392b");
         Button minBtn   = buildIconButton("−", "#3a7bd5");
         closeBtn.setOnAction(e -> stage.close());
@@ -125,7 +121,7 @@ public class MainScene {
             stage.setY(e.getScreenY() - dragOffsetY);
         });
 
-        bar.getChildren().addAll(logoIcon, title, subtitle, spacer, version, minBtn, closeBtn);
+        bar.getChildren().addAll(logoIcon, title, subtitle, spacer, minBtn, closeBtn);
         HBox.setMargin(minBtn, new Insets(0, 4, 0, 16));
         return bar;
     }
@@ -144,9 +140,19 @@ public class MainScene {
     }
 
     private Image loadAppIcon() {
-        Image fileIcon = new Image("file:logo.png", 128, 128, true, true);
-        return fileIcon.isError() ? createAppIcon() : fileIcon;
-    }
+    // Try next to the jar (installed app)
+    java.io.File f = new java.io.File(
+        System.getProperty("java.home") + "/../app/logo.png"
+    );
+    if (f.exists()) return new Image(f.toURI().toString(), 128, 128, true, true);
+
+    // Try working directory (running from source)
+    java.io.File f2 = new java.io.File("logo.png");
+    if (f2.exists()) return new Image(f2.toURI().toString(), 128, 128, true, true);
+
+    // Fallback: draw it programmatically
+    return createAppIcon();
+}
 
     private Image createAppIcon() {
         int size = 64;
