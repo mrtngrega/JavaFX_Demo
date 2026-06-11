@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Launch JavaFX",
+      "request": "launch",
+      "mainClass": "ShowcaseApp",
+      "vmArgs": "--enable-native-access=javafx.graphics --module-path /opt/javafx/lib --add-modules javafx.controls,javafx.graphics"
+    }
+  ]
+}
