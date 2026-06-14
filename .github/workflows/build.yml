@@ -24,16 +24,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Download JavaFX SDK (Linux/macOS)
         if: runner.os != 'Windows'
@@ -151,6 +147,19 @@ jobs:
             --dest dist \
             --vendor "Martin"
 
+      - name: Build custom runtime image (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          jlink `
+            --module-path "$env:JAVAFX_PATH;$env:JAVA_HOME\jmods" `
+            --add-modules java.base,java.desktop,java.logging,java.xml,javafx.controls,javafx.graphics,javafx.base `
+            --output runtime `
+            --strip-debug `
+            --no-header-files `
+            --no-man-pages
+          echo "JAVAFX_RUNTIME_IMAGE=$(pwd)\runtime" >> $env:GITHUB_ENV
+
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -162,24 +171,22 @@ jobs:
             --input build/jar `
             --main-jar app.jar `
             --main-class ShowcaseApp `
-            --module-path "$env:JAVAFX_PATH" `
-            --add-modules javafx.controls,javafx.graphics `
-            --java-options "--add-modules javafx.controls,javafx.graphics" `
+            --runtime-image "$env:JAVAFX_RUNTIME_IMAGE" `
             --java-options "-Djava.library.path=`$APPDIR/javafx-libs" `
+            --java-options "--add-modules=javafx.controls,javafx.graphics" `
             --icon logo.png `
             --dest dist `
             --vendor "Martin" `
             --win-shortcut `
             --win-menu `
-            --win-menu-group "Education"
+            --win-menu-group "Education" `
+            --win-console
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.os }}
           path: dist/*
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
   release:
     needs: build
@@ -192,13 +199,9 @@ jobs:
         with:
           path: installers
           merge-multiple: true
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: installers/*
           generate_release_notes: true
-        env:
-          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
