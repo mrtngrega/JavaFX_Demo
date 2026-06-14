@@ -110,7 +110,6 @@ jobs:
             --linux-shortcut \
             --linux-menu-group "Education" \
             --vendor "Martin"
-          # Also build RPM for Fedora/RHEL users
           jpackage \
             --type rpm \
             --name JavaFXDemo \
@@ -172,12 +171,10 @@ jobs:
             --main-jar app.jar `
             --main-class ShowcaseApp `
             --runtime-image "$env:JAVAFX_RUNTIME_IMAGE" `
-            --java-options "-Djava.library.path=`$APPDIR/javafx-libs" `
             --java-options "--add-modules=javafx.controls,javafx.graphics" `
             --icon logo.png `
             --dest dist `
             --vendor "Martin" `
-            --win-console `
             --win-shortcut `
             --win-menu `
             --win-menu-group "Education" `
@@ -206,5 +203,3 @@ jobs:
         with:
           files: installers/*
           generate_release_notes: true
-        env:
-        
