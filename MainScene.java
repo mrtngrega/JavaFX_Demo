@@ -35,6 +35,7 @@ public class MainScene {
     private String currentShapeName = "Sphere";
     private double currentHue = 200;
     private Color currentColor = null; // null = use hue-based color
+    private java.util.List<Button> shapeButtons;
 
     // Rotation — two persistent transforms reused across all shapes
     private final Rotate dragRotateX = new Rotate(0, new Point3D(-1, 0, 0));
@@ -43,13 +44,16 @@ public class MainScene {
     private boolean autoRotate = true;
 
     // Feature toggles
-    private boolean wireframe = false;  
+    private boolean wireframe = false;
     private boolean exploding  = false;
 
     // Info / status labels
     private Label shapeNameLabel;
     private Label shapeDescLabel;
     private Label polyCountLabel;
+    private Label vertexCountLabel;
+    private Label divisionsLabel;
+    private Label sizeLabel;
     private Label statusLabel;
 
     public MainScene(Stage stage) { this.stage = stage; }
@@ -140,19 +144,13 @@ public class MainScene {
     }
 
     private Image loadAppIcon() {
-    // Try next to the jar (installed app)
-    java.io.File f = new java.io.File(
-        System.getProperty("java.home") + "/../app/logo.png"
-    );
-    if (f.exists()) return new Image(f.toURI().toString(), 128, 128, true, true);
+        // Load from inside the jar (works both running from source and installed)
+        java.io.InputStream is = getClass().getResourceAsStream("/logo.png");
+        if (is != null) return new Image(is, 128, 128, true, true);
 
-    // Try working directory (running from source)
-    java.io.File f2 = new java.io.File("logo.png");
-    if (f2.exists()) return new Image(f2.toURI().toString(), 128, 128, true, true);
-
-    // Fallback: draw it programmatically
-    return createAppIcon();
-}
+        // Fallback: draw it programmatically
+        return createAppIcon();
+    }
 
     private Image createAppIcon() {
         int size = 64;
@@ -215,8 +213,14 @@ public class MainScene {
         sidebar.getChildren().add(sectionHeader("SHAPES"));
         String[] shapes = {"Sphere", "Box", "Cylinder", "Torus", "Icosahedron"};
         String[] icons  = {"◉", "⬛", "⬤", "⊙", "◈"};
-        for (int i = 0; i < shapes.length; i++)
-            sidebar.getChildren().add(buildNavButton(shapes[i], icons[i]));
+        shapeButtons = new java.util.ArrayList<>();
+        for (int i = 0; i < shapes.length; i++) {
+            Button btn = buildNavButton(shapes[i], icons[i]);
+            shapeButtons.add(btn);
+            sidebar.getChildren().add(btn);
+        }
+        // Highlight Sphere by default since it loads first
+        highlightButton(shapeButtons.get(0));
 
         sidebar.getChildren().add(sectionHeader("MATERIAL"));
         String[] colors     = {"Cosmic Blue", "Ember Red", "Neon Green", "Solar Gold", "Violet"};
@@ -348,8 +352,17 @@ public class MainScene {
         btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
         btn.setOnMouseEntered(e -> { if (!btn.getStyle().contains("#1a1a30")) btn.setStyle("-fx-background-color: #12122a; -fx-cursor: hand;"); });
         btn.setOnMouseExited(e  -> { if (!btn.getStyle().contains("#1a1a30")) btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;"); });
-        btn.setOnAction(e -> { loadShape(name); highlightButton(btn); });
+        btn.setOnAction(e -> {
+            loadShape(name);
+            for (Button b : shapeButtons) resetButtonStyle(b);
+            highlightButton(btn);
+        });
         return btn;
+    }
+
+    private void resetButtonStyle(Button btn) {
+        btn.setStyle("-fx-background-color: transparent; -fx-cursor: hand;");
+        btn.setTextFill(Color.web("#8080aa"));
     }
 
     private void highlightButton(Button selected) {
@@ -404,11 +417,11 @@ public class MainScene {
         camera.setFarClip(10000);
         camera.setFieldOfView(35);
 
-        javafx.scene.AmbientLight ambient = new javafx.scene.AmbientLight(Color.web("#1a1a3a"));
-        javafx.scene.PointLight light1 = new javafx.scene.PointLight(Color.web("#4a8fff"));
+        javafx.scene.AmbientLight ambient = new javafx.scene.AmbientLight(Color.web("#3a3a4a"));
+        javafx.scene.PointLight light1 = new javafx.scene.PointLight(Color.web("#ffffff"));
         light1.setTranslateX(300); light1.setTranslateY(-300); light1.setTranslateZ(-300);
         light1.setLinearAttenuation(0.0005);
-        javafx.scene.PointLight light2 = new javafx.scene.PointLight(Color.web("#ff4a8f"));
+        javafx.scene.PointLight light2 = new javafx.scene.PointLight(Color.web("#9aa5c0"));
         light2.setTranslateX(-300); light2.setTranslateY(200); light2.setTranslateZ(-200);
         light2.setLinearAttenuation(0.001);
 
@@ -437,10 +450,8 @@ public class MainScene {
             double dy = e.getSceneY() - lastMouse[1];
             lastMouse[0] = e.getSceneX();
             lastMouse[1] = e.getSceneY();
-            // dy UP   → negative → X angle should decrease (shape tilts toward viewer naturally)
-            // Flipped: subtract dy instead of add
             dragRotateX.setAngle(dragRotateX.getAngle() - dy * 0.5);
-            dragRotateY.setAngle(dragRotateY.getAngle() + dx * 0.5);
+            dragRotateY.setAngle(dragRotateY.getAngle() - dx * 0.5);
         });
 
         subScene.setOnMouseReleased(e -> {
@@ -501,25 +512,19 @@ public class MainScene {
         panel.getChildren().add(nameCard);
 
         panel.getChildren().add(sectionHeader("GEOMETRY"));
-        panel.getChildren().add(buildStatRow("Vertices", "—"));
+
+        vertexCountLabel = new Label("—");
+        panel.getChildren().add(buildStatRow("Vertices", vertexCountLabel));
 
         polyCountLabel = new Label("—");
-        polyCountLabel.setFont(Font.font("Monospace", FontWeight.BOLD, 11));
-        polyCountLabel.setTextFill(Color.web("#8090b0"));
-        HBox facesRow = new HBox();
-        facesRow.setPadding(new Insets(6, 16, 6, 16));
-        facesRow.setAlignment(Pos.CENTER_LEFT);
-        Label facesKey = new Label("Faces");
-        facesKey.setFont(Font.font("Monospace", 11));
-        facesKey.setTextFill(Color.web("#4a5a7a"));
-        facesKey.setMinWidth(80);
-        Region facesSpacer = new Region();
-        HBox.setHgrow(facesSpacer, Priority.ALWAYS);
-        facesRow.getChildren().addAll(facesKey, facesSpacer, polyCountLabel);
-        panel.getChildren().add(facesRow);
+        panel.getChildren().add(buildStatRow("Faces", polyCountLabel));
 
-        panel.getChildren().add(buildStatRow("Divisions", "64"));
-        panel.getChildren().add(buildStatRow("Radius", "120 units"));
+        divisionsLabel = new Label("64");
+        panel.getChildren().add(buildStatRow("Divisions", divisionsLabel));
+
+        sizeLabel = new Label("120 units");
+        panel.getChildren().add(buildStatRow("Size", sizeLabel));
+
         panel.getChildren().add(sectionHeader("MATERIAL"));
         panel.getChildren().add(buildStatRow("Type", "Phong"));
         panel.getChildren().add(buildStatRow("Diffuse", "Cosmic Blue"));
@@ -555,6 +560,23 @@ public class MainScene {
         Region sp = new Region();
         HBox.setHgrow(sp, Priority.ALWAYS);
         Label valLbl = new Label(val);
+        valLbl.setFont(Font.font("Monospace", FontWeight.BOLD, 11));
+        valLbl.setTextFill(Color.web("#8090b0"));
+        row.getChildren().addAll(keyLbl, sp, valLbl);
+        return row;
+    }
+
+    /** Overload that uses a pre-created Label so we can update its text later. */
+    private HBox buildStatRow(String key, Label valLbl) {
+        HBox row = new HBox();
+        row.setPadding(new Insets(6, 16, 6, 16));
+        row.setAlignment(Pos.CENTER_LEFT);
+        Label keyLbl = new Label(key);
+        keyLbl.setFont(Font.font("Monospace", 11));
+        keyLbl.setTextFill(Color.web("#4a5a7a"));
+        keyLbl.setMinWidth(80);
+        Region sp = new Region();
+        HBox.setHgrow(sp, Priority.ALWAYS);
         valLbl.setFont(Font.font("Monospace", FontWeight.BOLD, 11));
         valLbl.setTextFill(Color.web("#8090b0"));
         row.getChildren().addAll(keyLbl, sp, valLbl);
@@ -637,6 +659,13 @@ public class MainScene {
 
         shapeNameLabel.setText(name);
         shapeDescLabel.setText(ShapeFactory.getDescription(name));
+
+        String[] stats = ShapeFactory.getStats(name);
+        vertexCountLabel.setText(stats[0]);
+        polyCountLabel.setText(stats[1]);
+        divisionsLabel.setText(stats[2]);
+        sizeLabel.setText(stats[3]);
+
         statusLabel.setText("Loaded: " + name + " · Drag to orbit · Scroll to zoom");
     }
 

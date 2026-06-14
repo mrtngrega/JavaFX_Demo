@@ -164,4 +164,18 @@ public class ShapeFactory {
             default            -> "A 3D geometric shape.";
         };
     }
+
+    // ── STATS ──────────────────────────────────────────────────────────────────
+
+    /** Returns {vertices, faces, divisions, size} for the info panel. */
+    public static String[] getStats(String name) {
+        return switch (name) {
+            case "Sphere"      -> new String[]{"~2,050", "~4,096", "64", "Radius: 120 units"};
+            case "Box"         -> new String[]{"8", "12", "—", "180 × 180 × 180"};
+            case "Cylinder"    -> new String[]{"130", "~252", "64", "r=80, h=220"};
+            case "Torus"       -> new String[]{"1,800", "3,600", "60 × 30", "R=110, r=40"};
+            case "Icosahedron" -> new String[]{"12", "20", "—", "Radius: 120 units"};
+            default            -> new String[]{"—", "—", "—", "—"};
+        };
+    }
 }
