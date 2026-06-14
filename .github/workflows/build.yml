@@ -177,6 +177,7 @@ jobs:
             --icon logo.png `
             --dest dist `
             --vendor "Martin" `
+            --win-console `
             --win-shortcut `
             --win-menu `
             --win-menu-group "Education" `
@@ -205,3 +206,5 @@ jobs:
         with:
           files: installers/*
           generate_release_notes: true
+        env:
+        
