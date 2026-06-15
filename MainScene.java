@@ -450,8 +450,8 @@ public class MainScene {
             double dy = e.getSceneY() - lastMouse[1];
             lastMouse[0] = e.getSceneX();
             lastMouse[1] = e.getSceneY();
-            dragRotateX.setAngle(dragRotateX.getAngle() - dy * 0.5);
-            dragRotateY.setAngle(dragRotateY.getAngle() + dx * 0.5);
+            dragRotateX.setAngle(dragRotateX.getAngle() + dy * 0.5);
+            dragRotateY.setAngle(dragRotateY.getAngle() - dx * 0.5);
         });
 
         subScene.setOnMouseReleased(e -> {
