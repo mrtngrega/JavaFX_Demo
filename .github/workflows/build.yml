@@ -156,7 +156,8 @@ jobs:
             --output runtime `
             --strip-debug `
             --no-header-files `
-            --no-man-pages
+            --no-man-pages `
+            --bind-services
           echo "JAVAFX_RUNTIME_IMAGE=$(pwd)\runtime" >> $env:GITHUB_ENV
 
       - name: Debug - list runtime contents (Windows)
