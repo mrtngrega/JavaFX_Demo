@@ -159,6 +159,17 @@ jobs:
             --no-man-pages
           echo "JAVAFX_RUNTIME_IMAGE=$(pwd)\runtime" >> $env:GITHUB_ENV
 
+      - name: Debug - list runtime contents (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Write-Host "=== JavaFX SDK lib contents ==="
+          Get-ChildItem "$env:JAVAFX_PATH" | Select-Object Name
+          Write-Host "=== Runtime bin contents (prism/glass/javafx/d3d) ==="
+          Get-ChildItem -Recurse runtime\bin | Where-Object { $_.Name -match "prism|glass|javafx|d3d" } | Select-Object Name
+          Write-Host "=== Runtime modules list ==="
+          & "$env:JAVAFX_RUNTIME_IMAGE\bin\java.exe" --list-modules
+
       - name: Package (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
